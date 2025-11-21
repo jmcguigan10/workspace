@@ -1,0 +1,74 @@
+task: "refactor-logging"
+
+# openai_chat | openai_compatible | anthropic_messages
+provider: "openai_chat"
+
+# Exact model for your provider (e.g., gpt-4o, gpt-4.1, claude-3-5-sonnet-20241022, etc.)
+model: "gpt-4o"
+
+temperature: .2
+max_output_tokens: 5000
+reasoning_effort: "medium"
+
+instructions: |
+  You are a careful, senior-level software engineer who writes changes that compile and pass tests.
+  Output ONLY valid JSON following the schema below. No prose outside JSON.
+  Use patch_type "full_text" unless the file is very large, then you may use "unified_diff".
+  Keep changes minimal and well-structured.
+
+output:
+  format: "json_patch"
+  patch_type: "full_text"
+  split_by_file: true
+
+limits:
+  max_files: 200
+  max_file_bytes: 200000
+  max_total_bytes: 3000000
+
+gates:
+  run_after_apply:
+    # - "pytest -q"
+    # - "ruff check ."
+
+# Expanded inclusions for broad code coverage
+include:
+  - "src/**/*.py"
+  #- "config/**/*.yml"
+  #- "config/**/*.yaml"
+  - "src/**/*.*"
+  #- "**/*.yaml"
+  - "tools/**/*.py"
+  - "workspace_tools/**/*.py"
+  - "README.md"
+  #- "Makefile"
+exclude:
+  - "**/.git/**"
+  - "**/.ai/**"
+  - "**/.venv/**"
+  - "node_modules/**"
+  - "dist/**"
+  - "build/**"
+  - "**/*.min.js"
+  - "**/.git/**"
+  - "**/.env/**"
+  - "**/.venv*/**"
+  - "**/__pycache__/**"
+  - "node_modules/**"
+  - "dist/**"
+  - "build/**"
+  - "**/*.min.*"
+  - "config/**/*.*"
+  - "**/*.md"
+  - "**/*.yml"
+  - "**/*.json"
+  - "**/*.toml"
+  - "**/*.ini"
+  - "**/*.sh"
+  - "**/*.sql"
+  - "**/*.html"
+  - "**/*.css"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"

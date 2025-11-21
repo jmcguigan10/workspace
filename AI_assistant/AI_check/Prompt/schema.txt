@@ -1,0 +1,14 @@
+Return ONLY a single JSON object with this schema:
+
+{
+  "summary": "string",
+  "changes": [
+    {
+      "action": "create" | "modify" | "delete",
+      "path": "string",
+      "patch_type": "full_text" | "unified_diff",
+      // if patch_type == "full_text": include "content": "new entire file content"
+      // if patch_type == "unified_diff": include "patch": "unified diff text"
+    }
+  ]
+}
