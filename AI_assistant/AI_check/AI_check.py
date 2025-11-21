@@ -1,44 +1,47 @@
 import sys
-
-# from optparse import make_option
 from pathlib import Path
 
-from provider_name import get_provider
+from AI_vendor.utils._ProviderError import ProviderError
+from AI_vendor.utils.api_utils import get_env, get_provider
 
-from AI_assistant.AI_check.Config.get_cfg import Load
-from AI_assistant.AI_check.Prompt.mk_debug import build_dbg_request
-from AI_assistant.AI_check.Prompt.mk_message import make_messages
-from AI_assistant.AI_check.Return.write_patch import PatchRunWriter
-from AI_assistant.AI_check.utils import check_patch4error, merger, mkodir
-from AI_assistant.AI_vendor.utils._ProviderError import ProviderError
-from AI_assistant.AI_vendor.utils.api_utils import get_env
-
-# from AI_assistant.utils.arg_parser import check_args
+from AI_check.Config.get_cfg import Load
+from AI_check.Config.merge_cfg import merger
+from AI_check.Prompt.mk_debug import build_dbg_request
+from AI_check.Prompt.mk_message import make_messages
+from AI_check.Return.write_patch import PatchRunWriter
+from AI_check.utils import check_patch4error, mkodir
 
 
-def main(root):
+def main(root) -> None:
+    """Entry point for running the AI check pipeline."""
+    root = Path(root)
+
     # Initialize the environment with API key and model specs
     get_env(root)
     args = Load.get_args()
-    conf = Load.get_tasks(Path("ai_tasks.yaml"))
 
-    input = {}
-    input["root"] = root
-    merger(input, args, conf)
+    config_dir = Path(__file__).with_name("Config")
+    task_path = config_dir / args.task
+    conf = Load.get_tasks(task_path)
 
-    messages = make_messages(input=input)
+    state: dict = {}
+    state["root"] = root
+
+    merger(state, args, conf)
+
+    messages = make_messages(state=state)
 
     try:
-        Provider = get_provider(input=input)
-        patch_obj = Provider.generate_json(messages, args=input)
+        provider = get_provider(state["provider_name"])
+        patch_obj = provider.generate_json(messages, args=state)
         check_patch4error(patch_obj)
     except ProviderError as e:
         print(f"[provider error] {e}", file=sys.stderr)
         sys.exit(3)
 
-    mkodir(input=input)
+    mkodir(state=state)
 
-    dbg_request = build_dbg_request(messages=messages, input=input)
+    dbg_request = build_dbg_request(messages=messages, state=state)
 
-    writer = PatchRunWriter(out_dir=input["output_dir"])
+    writer = PatchRunWriter(out_dir=state["output_dir"])
     writer.write_all(dbg_request, patch_obj)
